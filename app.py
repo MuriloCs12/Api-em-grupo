@@ -57,7 +57,7 @@ def delete_mensagens(id):
     mensagem = Mensagem.query.get(id)
     db.session.delete(mensagem)
     db.session.commit()
-    return jsonify('Sua mensagem foi deletada com sucesso!')
+    return jsonify({'mensagem':'Sua mensagem foi deletada com sucesso!'})
 
 if __name__ == '__main__':
     with app.app_context():  
