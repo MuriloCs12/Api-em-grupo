@@ -23,7 +23,7 @@ def read_all_mensagens():
     
 @app.route('/mensagens/<int:id>', methods=['GET'])
 def read_one_mensagem(id):
-    mensagem = Mensagem.query.get(id)
+    mensagem = Mensagem.query.(id, description="Nenhuma mensagem com esse ID foi encontrada.")
     return jsonify({
         'id': mensagem.id,
         'conteudo': mensagem.conteudo
@@ -44,7 +44,7 @@ def criar_mensagem():
 @app.route('/mensagens/<int:id>', methods=['PUT'])
 def update_mensagens(id):
     novo_conteudo = request.form.get('conteudo')
-    mensagem = Mensagem.query.get(id)
+    mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
     mensagem.conteudo = novo_conteudo
     db.session.commit()
     return jsonify({
@@ -54,7 +54,7 @@ def update_mensagens(id):
 
 @app.route('/mensagens/<int:id>', methods=['DELETE'])
 def delete_mensagens(id):
-    mensagem = Mensagem.query.get(id)
+    mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
     db.session.delete(mensagem)
     db.session.commit()
     return jsonify({'mensagem':'Sua mensagem foi deletada com sucesso!'})
