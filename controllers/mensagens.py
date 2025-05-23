@@ -4,18 +4,18 @@ from utils import db
 from schemas.mensagem_schema import MensagemSchema
 
 bp_mensagens = Blueprint('mensagem', __name__)
-mensagens_schema = MensagemSchema()
+mensagem_schema = MensagemSchema()
 mensagens_schema = MensagemSchema(many=True)
 
 @bp_mensagens.route('/', methods=['GET'])
 def read_all_mensagens():
-    mensagens = Mensagem.query.all()
-    return mensagens_schema.jsonify(mensagens)
+    messages = Mensagem.query.all()
+    return mensagens_schema.jsonify(messages), 200
     
 @bp_mensagens.route('/<int:id>', methods=['GET'])
 def read_one_mensagem(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
-    return mensagens_schema.jsonify(mensagem)
+    return mensagem_schema.jsonify(mensagem)
 
 @bp_mensagens.route('/', methods=['POST'])
 def criar_mensagem():
@@ -27,16 +27,18 @@ def criar_mensagem():
 
     db.session.add(nova_mensagem)
     db.session.commit()
-    mensagem_nova = mensagens_schema.dump(nova_mensagem)
-    return mensagens_schema.jsonify(mensagem_nova), 201
+    return mensagem_schema.jsonify(nova_mensagem), 201
 
 @bp_mensagens.route('/<int:id>', methods=['PUT'])
 def update_mensagens(id):
-    novo_conteudo = request.form.get_or_404('conteudo', description="Campo conteúdo precisa ser preenchido.")
+    novo_conteudo = request.form.get('conteudo')
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
-    mensagem.conteudo = novo_conteudo
+    
+    if not novo_conteudo:
+        return jsonify({'mensagem': 'Campo conteúdo precisa ser preenchido.'}), 400
+   
     db.session.commit()
-    return mensagens_schema.jsonify(mensagem), 200
+    return mensagem_schema.jsonify(mensagem), 200
 
 @bp_mensagens.route('/<int:id>', methods=['DELETE'])
 def delete_mensagens(id):
