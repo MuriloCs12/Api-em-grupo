@@ -36,6 +36,8 @@ def update_mensagens(id):
     
     if not novo_conteudo:
         return jsonify({'mensagem': 'Campo conteúdo precisa ser preenchido.'}), 400
+    
+    mensagem.conteudo = novo_conteudo
    
     db.session.commit()
     return mensagem_schema.jsonify(mensagem), 200
