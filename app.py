@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, make_response
 from models.mensagens import Mensagem
-from utils import db, ma
+from utils import db, ma, lm
 from flask_migrate import Migrate
 from controllers.mensagens import bp_mensagens
 from marshmallow import ValidationError
@@ -13,6 +13,7 @@ app.json.sort_keys = False
 db.init_app(app)
 migrate = Migrate(app, db)
 ma.init_app(app)
+lm.init_app(app)
 
 app.register_blueprint(bp_mensagens, url_prefix="/mensagens")
 
