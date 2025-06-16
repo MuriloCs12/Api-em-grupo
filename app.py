@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify, make_response, render_template
+from flask import Flask, request, jsonify, make_response, render_templatem, LoginManager,login_user, logout_user, login_required, current_user
 from models.mensagens import Mensagem
 from utils import db, ma, lm
 from flask_migrate import Migrate
 from controllers.mensagens import bp_mensagens
+from controllers.usuario import bp_usuarios
 from marshmallow import ValidationError
 from werkzeug.exceptions import HTTPException
 
@@ -16,6 +17,7 @@ ma.init_app(app)
 lm.init_app(app)
 
 app.register_blueprint(bp_mensagens, url_prefix="/mensagens")
+app.register_blueprint(bp_usuarios, url_prefix = '/usuarios')
 
 
 def register_error_handlers(app):
