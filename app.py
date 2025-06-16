@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, render_template
 from models.mensagens import Mensagem
 from utils import db, ma, lm
 from flask_migrate import Migrate
@@ -41,7 +41,7 @@ def register_error_handlers(app):
             "mensagem": str(error)
         }), 500
 
-@app.route('/')
+@app.route('/registro')
 def registrar():
     return render_template('registro.html')
 
