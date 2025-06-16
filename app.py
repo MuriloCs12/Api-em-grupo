@@ -41,6 +41,10 @@ def register_error_handlers(app):
             "mensagem": str(error)
         }), 500
 
+@app.route('/')
+def registrar():
+    return render_template('registro.html')
+
 register_error_handlers(app)
 
 if __name__ == '__main__':
