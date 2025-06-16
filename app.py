@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, make_response, render_templatem, LoginManager,login_user, logout_user, login_required, current_user
+from flask import Flask, request, jsonify, make_response, render_template
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models.mensagens import Mensagem
 from utils import db, ma, lm
 from flask_migrate import Migrate

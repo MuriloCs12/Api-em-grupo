@@ -10,7 +10,7 @@ def load_user(id):
 	usuario = Usuario.query.filter_by(id = id).first()
 	return usuario
 
-@bp_usuarios.route('/usuario', methods=['POST'])
+@bp_usuarios.route('/', methods=['POST'])
 def create_usuario():
     nome = request.form.get('nome')
     email = request.form.get('email')
@@ -33,7 +33,7 @@ def create_usuario():
         flash ('Erro. Senhas não correspondentes')
         return redirect('/registrar')
 
-@bp_usuarios.route('/auth_usuario', methods=['POST'])
+@bp_usuarios.route('/auth', methods=['POST'])
 def autenticar_usuario():
     login = request.form.get('login')
     senha = request.form.get('senha')
