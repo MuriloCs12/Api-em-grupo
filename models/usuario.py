@@ -6,6 +6,6 @@ class Usuario(db.Model, UserMixin):
     nome = db.Column(db.String(200), nullable = False)
     email = db.Column(db.String(100), unique = True)
 
-    __init__(self, nome, email):
+    def __init__(self, nome, email):
         self.nome = nome
         self.email = email
