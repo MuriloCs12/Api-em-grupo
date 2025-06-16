@@ -7,6 +7,8 @@ class Usuario(db.Model, UserMixin):
     email = db.Column(db.String(100), unique = True)
     senha = db.Column(db.String(100), nullable = False)
 
+    mensagens = db.relationship("Mensagem")
+
     def __init__(self, nome, email):
         self.nome = nome
         self.email = email
