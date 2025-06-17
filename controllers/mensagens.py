@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from models.mensagens import Mensagem
 from utils import db
+from flask_login import current_user, login_required
 from schemas.mensagem_schema import MensagemSchema
 
 bp_mensagens = Blueprint('mensagem', __name__)
@@ -10,8 +11,7 @@ mensagens_schema = MensagemSchema(many=True)
 @bp_mensagens.route('/', methods=['GET'])
 def read_all_mensagens():
     messages = Mensagem.query.all()
-    return jsonify([msg.to_dict() for msg in messages]), 200
-
+    return mensagens_schema.jsonify([msg.to_dict() for msg in messages]), 200
     
 @bp_mensagens.route('/<int:id>', methods=['GET'])
 def read_one_mensagem(id):
@@ -24,7 +24,7 @@ def criar_mensagem():
     if not conteudo:
         return jsonify({'mensagem': 'Campo conteúdo não preenchido'}), 400
 
-    nova_mensagem = Mensagem(conteudo=conteudo)
+    nova_mensagem = Mensagem(conteudo=conteudo, id_usuario = current_user.id)
 
     db.session.add(nova_mensagem)
     db.session.commit()

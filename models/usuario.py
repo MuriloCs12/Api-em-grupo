@@ -13,6 +13,6 @@ class Usuario(db.Model, UserMixin):
     def to_dict(self):
         return {
             "id": self.id,
-            "nome": self.nome,
-            "email": self.email
+            "content": self.content,
+            "created_at": self.created_at.isoformat()
         }
