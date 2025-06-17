@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from models.mensagens import Mensagem
 from utils import db
+from flask_login import current_user, login_required
 from schemas.mensagem_schema import MensagemSchema
 
 bp_mensagens = Blueprint('mensagem', __name__)
@@ -10,12 +11,12 @@ mensagens_schema = MensagemSchema(many=True)
 @bp_mensagens.route('/', methods=['GET'])
 def read_all_mensagens():
     messages = Mensagem.query.all()
-    return mensagens_schema.jsonify(messages), 200
+    return mensagens_schema.jsonify([msg.to_dict() for msg in messages]), 200
     
 @bp_mensagens.route('/<int:id>', methods=['GET'])
 def read_one_mensagem(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
-    return mensagem_schema.jsonify(mensagem)
+    return mensagem_schema.jsonify(mensagem.to_dict())
 
 @bp_mensagens.route('/', methods=['POST'])
 def criar_mensagem():
@@ -23,11 +24,11 @@ def criar_mensagem():
     if not conteudo:
         return jsonify({'mensagem': 'Campo conteúdo não preenchido'}), 400
 
-    nova_mensagem = Mensagem(conteudo=conteudo)
+    nova_mensagem = Mensagem(conteudo=conteudo, id_usuario = current_user.id)
 
     db.session.add(nova_mensagem)
     db.session.commit()
-    return mensagem_schema.jsonify(nova_mensagem), 201
+    return mensagem_schema.jsonify(nova_mensagem.to_dict()), 201
 
 @bp_mensagens.route('/<int:id>', methods=['PUT'])
 def update_mensagens(id):
@@ -40,7 +41,7 @@ def update_mensagens(id):
     mensagem.conteudo = novo_conteudo
    
     db.session.commit()
-    return mensagem_schema.jsonify(mensagem), 200
+    return mensagem_schema.jsonify(mensagem.to_dict()), 200
 
 @bp_mensagens.route('/<int:id>', methods=['DELETE'])
 def delete_mensagens(id):
