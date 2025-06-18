@@ -18,6 +18,7 @@ def read_one_mensagem(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
     return mensagem_schema.jsonify(mensagem.to_dict())
 
+@login_required
 @bp_mensagens.route('/', methods=['POST'])
 def criar_mensagem():
     conteudo = request.form.get('conteudo')
@@ -30,6 +31,7 @@ def criar_mensagem():
     db.session.commit()
     return mensagem_schema.jsonify(nova_mensagem.to_dict()), 201
 
+@login_required
 @bp_mensagens.route('/<int:id>', methods=['PUT'])
 def update_mensagens(id):
     novo_conteudo = request.form.get('conteudo')
@@ -43,6 +45,7 @@ def update_mensagens(id):
     db.session.commit()
     return mensagem_schema.jsonify(mensagem.to_dict()), 200
 
+@login_required
 @bp_mensagens.route('/<int:id>', methods=['DELETE'])
 def delete_mensagens(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
