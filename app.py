@@ -7,6 +7,7 @@ from controllers.mensagens import bp_mensagens
 from controllers.usuario import bp_usuarios
 from marshmallow import ValidationError
 from werkzeug.exceptions import HTTPException
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dados.db'
@@ -16,6 +17,7 @@ db.init_app(app)
 migrate = Migrate(app, db)
 ma.init_app(app)
 lm.init_app(app)
+CORS(app)
 
 app.register_blueprint(bp_mensagens, url_prefix="/mensagens")
 app.register_blueprint(bp_usuarios, url_prefix = '/usuarios')
