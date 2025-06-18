@@ -15,16 +15,13 @@ def load_user(id):
 
 @bp_usuarios.route('/', methods=['POST'])
 def create_usuario():
-    dados = usuario_schema.load(request.get_json())  # se for inválido, Marshmallow levanta erro 400 automaticamente
+    data = usuario_schame.load(request.get_json())
 
+    nome = data.get('nome')
+    email = data.get('email')
     senha_hash = hashlib.sha256(dados['senha'].encode()).hexdigest()
 
-    novo_usuario = Usuario(
-        nome=dados['nome'],
-        email=dados['email'],
-        senha=senha_hash
-    )
-
+    novo_usuario = Usuario(nome, email, senha_hash)
     db.session.add(novo_usuario)
     db.session.commit()
 
