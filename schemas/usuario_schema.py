@@ -10,24 +10,25 @@ class UsuarioSchema(ma.SQLAlchemyAutoSchema):
         fields = ("id", "nome", "email", "senha")
     id = fields.Int(dump_only=True)
     nome = fields.Str(required=True, validate=validate.Length(min=1, max=200))
-    email = fields.Str(required=True, validate=validate.Email(error="Formato de email inválido"))
+    email = fields.Email(required=True)
     senha = fields.Str(required=True)
-    csenha = fields.Str(required=True, load_only=True)
 
     @validates('nome')
-    def validar_nome_unico(self, value):
+    def validar_nome_unico(self, value, **kwargs):
+        user_id = self.context.get("id")
         nome_existe = Usuario.query.filter_by(nome=value).first()
         if nome_existe:
             raise ValidationError("Nome já existe.")
 
-    @validates('email')
-    def validar_email_unico(self, value):
+    @validates("email")
+    def validar_email_unico(self, value, **kwargs):
+        user_id = self.context.get("id")
         email_existe = Usuario.query.filter_by(email=value).first()
         if email_existe:
             raise ValidationError("Email já está em uso.")
 
     @validates('senha')
-    def validar_senha_complexa(self, senha):
+    def validar_senha_complexa(self, senha, **kwargs):
         regular_expression = r'^(?=.*[0-9])(?=.*[A-Z])(?=.*[a-z])(?=.*[@!%*?&]).{8,}$'
         if not re.match(regular_expression, senha):
             raise ValidationError(
@@ -35,8 +36,3 @@ class UsuarioSchema(ma.SQLAlchemyAutoSchema):
                 "conter pelo menos um dígito, uma letra maiúscula, "
                 "uma letra minúscula e um caractere especial (@!%*?&)."
             )
-
-    @validates_schema
-    def validar_senhas_iguais(self, dados):
-        if dados.get('senha') != dados.get('csenha'):
-            raise ValidationError('As senhas não coincidem.', field_name='csenha')
