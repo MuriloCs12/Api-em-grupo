@@ -1,9 +1,12 @@
 from flask import Blueprint, jsonify, request
 from models.usuario import Usuario
 from utils import db, lm
-from schemas.mensagem_schema import MensagemSchema
+from flask_login import current_user, login_required
+from schemas.usuario_schema import UsuarioSchema
 
 bp_usuarios = Blueprint("usuarios", __name__, template_folder='templates')
+
+usuario_schema = UsuarioSchema()
 
 @lm.user_loader
 def load_user(id):
@@ -12,38 +15,36 @@ def load_user(id):
 
 @bp_usuarios.route('/', methods=['POST'])
 def create_usuario():
-    nome = request.form.get('nome')
-    email = request.form.get('email')
-    senha = request.form.get('senha')
-    senha_hash = hashlib.sha256(senha.encode())
-    csenha = request.form.get('csenha')
-    
-    username_existente = Usuario.query.filter_by(username=username).first()
-    if username_existente:
-        flash('Nome de usuário já está em uso')
-        return redirect('/registrar')
-    
-    if senha == csenha:
-        usuario = Usuario(username, email, senha_hash.hexdigest())
-        db.session.add(usuario)
-        db.session.commit()
-        flash ('Dados cadastrados com sucesso')
-        return redirect('/entrar')
-    else:
-        flash ('Erro. Senhas não correspondentes')
-        return redirect('/registrar')
+    dados = usuario_schema.load(request.get_json())  # se for inválido, Marshmallow levanta erro 400 automaticamente
+
+    senha_hash = hashlib.sha256(dados['senha'].encode()).hexdigest()
+
+    novo_usuario = Usuario(
+        nome=dados['nome'],
+        email=dados['email'],
+        senha=senha_hash
+    )
+
+    db.session.add(novo_usuario)
+    db.session.commit()
+
+    return jsonify({"mensagem": "Usuário criado com sucesso."}), 201
 
 @bp_usuarios.route('/auth', methods=['POST'])
 def autenticar_usuario():
-    login = request.form.get('login')
-    senha = request.form.get('senha')
+    dados = request.get_json()
+    email = dados.get('email')
+    senha = dados.get('senha')
 
-    user = Usuario.query.filter((Usuario.nome == login) | (Usuario.email == login)).first()
+    if not email or not senha:
+        return jsonify({"erro": "Email e senha são obrigatórios."}), 400
 
-    if user and user.senha == hashlib.sha256(senha.encode()).hexdigest():
-        login_user(user)
-        return redirect('/r')
+    usuario = Usuario.query.filter_by(email=email).first()
+    senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+
+    if not usuario or usuario.senha != senha_hash:
+        return jsonify({"erro": "Email ou senha incorretos."}), 401
+
+    login_user(usuario)
+    return jsonify({"mensagem": f"Bem-vindo, {usuario.nome}!"}), 200
     
-  
-    flash('Usuário ou senha inválidos.', 'danger')
-    return redirect('/entrar')
