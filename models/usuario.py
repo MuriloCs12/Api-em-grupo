@@ -8,7 +8,8 @@ class Usuario(db.Model, UserMixin):
     email = db.Column(db.String(100), unique = True)
     senha = db.Column(db.String(100), nullable = False)
 
-    mensagens = db.relationship("Mensagem", backref="usuarios")
+    mensagens = db.relationship("Mensagem", backref="usuario")
+    comentarios = db.relationship("Comentario", backref="usuario")
 
     def to_dict(self):
         return {
