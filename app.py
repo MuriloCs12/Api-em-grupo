@@ -8,9 +8,15 @@ from controllers.usuario import bp_usuarios
 from marshmallow import ValidationError
 from werkzeug.exceptions import HTTPException
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, set_access_cookies, get_jwt
+from datetime import datetime, timezone, timedelta
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dados.db'
+app.config["JWT_SECRET_KEY"] = "senhascrt"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 app.json.sort_keys = False
 
 db.init_app(app)
@@ -18,6 +24,7 @@ migrate = Migrate(app, db)
 ma.init_app(app)
 lm.init_app(app)
 CORS(app)
+jwt = JWTManager(app)
 
 app.register_blueprint(bp_mensagens, url_prefix="/mensagens")
 app.register_blueprint(bp_usuarios, url_prefix = '/usuarios')
@@ -61,6 +68,7 @@ def perfil():
 @app.route('/editar_dados')
 def editar_dados():
     return render_template('editar-dados.html')
+
 
 register_error_handlers(app)
 
