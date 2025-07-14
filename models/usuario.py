@@ -7,6 +7,7 @@ class Usuario(db.Model, UserMixin):
     nome = db.Column(db.String(200), nullable = False)
     email = db.Column(db.String(100), unique = True)
     senha = db.Column(db.String(100), nullable = False)
+    admin = db.Column(db.Boolean, default = False)
 
     mensagens = db.relationship("Mensagem", backref="usuario")
     comentarios = db.relationship("Comentario", backref="usuario")

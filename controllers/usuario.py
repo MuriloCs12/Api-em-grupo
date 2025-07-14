@@ -71,7 +71,7 @@ def login():
     if not user or (hashlib.sha256(senha.encode()).hexdigest() != user.senha):
         return jsonify({"erro": "Nome ou senha incorretos"}), 401
 
-    access_token = create_access_token(identity=user.nome, fresh=True)
+    access_token = create_access_token(identity=user.nome, fresh=True, additional_claims={"admin": usuario.admin})
     refresh_token = create_refresh_token(identity=user.nome)
     return jsonify(access_token=access_token, refresh_token=refresh_token)
 
