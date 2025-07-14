@@ -18,6 +18,7 @@ def load_user(id):
 	return UsuarioSchema
 
 @bp_usuarios.route('/', methods=['GET'])
+@jwt_required()
 def get_usuarios():
     usuarios = Usuario.query.all()
     return usuarios_schema.jsonify([user.to_dict() for user in usuarios]), 200
@@ -36,6 +37,7 @@ def create_usuario():
     return jsonify({"mensagem": "Usuário criado com sucesso."}), 201
 
 @bp_usuarios.route('/<int:id>', methods=['PATCH'])
+@jwt_required()
 def atualizar_dados(id):
     usuario = Usuario.query.get_or_404(id, description="Nenhum usuário com esse ID foi encontrado.")
     dados = request.get_json()
@@ -81,12 +83,5 @@ def refresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity, fresh=False)
     return jsonify(access_token=access_token)
-
-@bp_usuarios.route("/protected", methods=["GET"])
-@jwt_required()
-def protected():
-    current_user = get_jwt_identity()
-    return jsonify(logged_in_as=current_user), 200
-
 
     

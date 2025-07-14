@@ -17,12 +17,13 @@ def read_all_mensagens():
     return jsonify([msg.to_dict() for msg in messages]), 200
     
 @bp_mensagens.route('/<int:id>', methods=['GET'])
+@jwt_required()
 def read_one_mensagem(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
     return jsonify(mensagem.to_dict())
 
-@login_required
 @bp_mensagens.route('/', methods=['POST'])
+@jwt_required()
 def criar_mensagem():
     mensagem = mensagem_schema.load(request.get_json())
     if not request.json.get("conteudo"):
@@ -32,8 +33,8 @@ def criar_mensagem():
     db.session.commit()
     return jsonify(mensagem.to_dict()), 201
 
-@login_required
 @bp_mensagens.route('/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_mensagens(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
     dados_mensagem = mensagem_schema.load(request.get_json())
@@ -47,8 +48,8 @@ def update_mensagens(id):
     db.session.commit()
     return jsonify(mensagem.to_dict()), 200
 
-@login_required
 @bp_mensagens.route('/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_mensagens(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
     db.session.delete(mensagem)
@@ -56,8 +57,8 @@ def delete_mensagens(id):
     return jsonify({'mensagem':'Sua mensagem foi deletada com sucesso!'})
 
 
-@login_required
 @bp_mensagens.route('/<int:id>/comentarios', methods=['POST'])
+@jwt_required()
 def create_comentario(id):
     comentario = comentario_schema.load(request.get_json())
     if not request.json.get("conteudo"):
@@ -69,14 +70,14 @@ def create_comentario(id):
     db.session.commit()
     return comentario_schema.jsonify(comentario), 201
 
-@login_required
 @bp_mensagens.route('/<int:id>/comentarios', methods=['GET'])
+@jwt_required()
 def listar_comentarios(id):
     comentarios = Comentario.query.filter_by(id_mensagem=id)
     return jsonify([cmt.to_dict() for cmt in comentarios]), 200
 
-@login_required
 @bp_mensagens.route('/<int:id>/comentarios/<int:id_comt>', methods=['GET'])
+@jwt_required()
 def read_one_comentario(id, id_comt):
     comentario = Comentario.query.filter_by(id=id_comt, id_mensagem=id).first()
 
@@ -85,8 +86,8 @@ def read_one_comentario(id, id_comt):
     
     return comentario_schema.jsonify(comentario)
 
-@login_required
 @bp_mensagens.route('/<int:id>/comentarios/<int:id_comt>', methods=['PUT'])
+@jwt_required()
 def update_comentario(id, id_comt):
     comentario = Comentario.query.filter_by(id=id_comt, id_mensagem=id).first()
     
@@ -101,8 +102,8 @@ def update_comentario(id, id_comt):
     db.session.commit()
     return comentario_schema.jsonify(comentario), 200
 
-@login_required
 @bp_mensagens.route('/<int:id>/comentarios/<int:id_comt>', methods=['DELETE'])
+@jwt_required()
 def delete_comentario(id, id_comt):
     comentario = Comentario.query.filter_by(id=id_comt, id_mensagem=id).first()
 
