@@ -5,6 +5,7 @@ from utils import db
 from flask_login import current_user, login_required
 from schemas.mensagem_schema import MensagemSchema
 from schemas.comentario_schema import ComentarioSchema
+from flask_jwt_extended import jwt_required
 
 bp_mensagens = Blueprint('mensagem', __name__)
 mensagem_schema = MensagemSchema()

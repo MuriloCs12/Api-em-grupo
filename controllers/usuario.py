@@ -3,9 +3,12 @@ from models.usuario import Usuario
 from utils import db, lm
 from flask_login import current_user, login_required
 from schemas.usuario_schema import UsuarioSchema
-from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required
-import hashlib
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required, verify_jwt_in_request, get_jwt
+from werkzeug.security import generate_password_hash
 from datetime import datetime, timezone, timedelta
+from functools import wraps
+import hashlib
+from werkzeug.security import check_password_hash
 
 bp_usuarios = Blueprint("usuarios", __name__, template_folder='templates')
 
@@ -17,11 +20,12 @@ def load_user(id):
 	usuario = Usuario.query.filter_by(id = id).first()
 	return UsuarioSchema
 
+
 @bp_usuarios.route('/', methods=['GET'])
-@jwt_required()
 def get_usuarios():
     usuarios = Usuario.query.all()
     return usuarios_schema.jsonify([user.to_dict() for user in usuarios]), 200
+
 
 @bp_usuarios.route('/', methods=['POST'])
 def create_usuario():
@@ -35,6 +39,27 @@ def create_usuario():
     db.session.commit()
 
     return jsonify({"mensagem": "Usuário criado com sucesso."}), 201
+
+
+def admin_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        claims = get_jwt()
+        if not claims.get("admin", False):
+            return jsonify({"msg": "Acesso negado: administrador apenas."}), 403
+        return func(*args, **kwargs)
+    return wrapper
+
+
+@bp_usuarios.route("/<int:id>", methods=["DELETE"])
+def excluir_usuario(id):
+    usuario = Usuario.query.get_or_404(id, description="Usuário não encontrado.")
+
+    db.session.delete(usuario)
+    db.session.commit()
+    return jsonify({"mensagem": f"Usuário {usuario.nome} foi excluído com sucesso."}), 200
+
 
 @bp_usuarios.route('/<int:id>', methods=['PATCH'])
 @jwt_required()
@@ -62,6 +87,16 @@ def atualizar_dados(id):
     return jsonify({"mensagem": "Dados atualizados com sucesso."}), 200
 
 
+@bp_usuarios.route("<int:id>/promover", methods=["PATCH"])
+@jwt_required()
+@admin_required
+def promover_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+    usuario.admin = True
+    db.session.commit()
+    return jsonify({"msg": f"Usuário {usuario.nome} promovido a admin."})
+
+
 @bp_usuarios.route("/login", methods=["POST"])
 def login():
     nome = request.json.get("nome", None)
@@ -70,12 +105,13 @@ def login():
 
     if not nome or not senha:
         return jsonify({"erro": "Nome e senha são obrigatórios"}), 400
-    if not user or (hashlib.sha256(senha.encode()).hexdigest() != user.senha):
+    if not user or not check_password_hash(user.senha, senha):
         return jsonify({"erro": "Nome ou senha incorretos"}), 401
 
-    access_token = create_access_token(identity=user.nome, fresh=True, additional_claims={"admin": usuario.admin})
+    access_token = create_access_token(identity=user.nome, fresh=True, additional_claims={"admin": user.admin})
     refresh_token = create_refresh_token(identity=user.nome)
     return jsonify(access_token=access_token, refresh_token=refresh_token)
+
 
 @bp_usuarios.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
