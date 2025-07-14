@@ -53,23 +53,6 @@ def register_error_handlers(app):
             "mensagem": str(error)
         }), 500
 
-@app.route('/registro')
-def registrar():
-    return render_template('registro.html')
-
-@app.route('/mensagem')
-def mensagem():
-    return render_template('mensagem.html')
-
-@app.route('/perfil')
-def perfil():
-    return render_template('perfil.html')
-
-@app.route('/editar_dados')
-def editar_dados():
-    return render_template('editar-dados.html')
-
-
 register_error_handlers(app)
 
 if __name__ == '__main__':
