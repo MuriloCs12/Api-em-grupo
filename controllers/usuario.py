@@ -15,11 +15,6 @@ bp_usuarios = Blueprint("usuarios", __name__, template_folder='templates')
 usuario_schema = UsuarioSchema()
 usuarios_schema = UsuarioSchema(many=True)
 
-@lm.user_loader
-def load_user(id):
-	usuario = Usuario.query.filter_by(id = id).first()
-	return UsuarioSchema
-
 
 @bp_usuarios.route('/', methods=['GET'])
 @jwt_required()
@@ -35,7 +30,7 @@ def create_usuario():
     schema.context = {}
     usuario = schema.load(request.get_json())
 
-    usuario.senha = hashlib.sha256(usuario.senha.encode()).hexdigest()
+    usuario.senha = generate_password_hash(usuario.senha)
 
     db.session.add(usuario)
     db.session.commit()
@@ -80,11 +75,7 @@ def atualizar_dados(id):
     if request.json.get("email"):
         usuario.email = dados_alterados.email
     if request.json.get("senha"):
-        usuario.senha = hashlib.sha256(dados_alterados.senha.encode()).hexdigest()
-    
-    nova_senha = dados.get('senha')
-    if nova_senha:
-        usuario.senha = hashlib.sha256(nova_senha.encode()).hexdigest()
+        usuario.senha = generate_password_hash(dados_alterados.senha)
 
     db.session.commit()
 
