@@ -22,6 +22,8 @@ def load_user(id):
 
 
 @bp_usuarios.route('/', methods=['GET'])
+@jwt_required()
+@admin_required
 def get_usuarios():
     usuarios = Usuario.query.all()
     return usuarios_schema.jsonify([user.to_dict() for user in usuarios]), 200
@@ -53,6 +55,8 @@ def admin_required(func):
 
 
 @bp_usuarios.route("/<int:id>", methods=["DELETE"])
+@jwt_required()
+@admin_required
 def excluir_usuario(id):
     usuario = Usuario.query.get_or_404(id, description="Usuário não encontrado.")
 
