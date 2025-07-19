@@ -7,7 +7,7 @@ class Mensagem(db.Model):
     conteudo = db.Column(db.String(500), nullable = False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id'), default=1)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id'))
     comentarios = db.relationship("Comentario", backref="mensagem", cascade="all, delete-orphan")
 
     def to_dict(self):

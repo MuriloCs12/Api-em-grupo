@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from models.mensagens import Mensagem
 from models.comentario import Comentario
+from controllers.usuario import admin_required
 from utils import db
 from flask_login import current_user, login_required
 from schemas.mensagem_schema import MensagemSchema
@@ -27,8 +28,13 @@ def read_one_mensagem(id):
 @jwt_required()
 def criar_mensagem():
     mensagem = mensagem_schema.load(request.get_json())
+
     if not request.json.get("conteudo"):
         return jsonify({'mensagem': 'Campo conteúdo não preenchido'}), 400
+
+    user_id = get_jwt_identity
+
+    mensagem.id_usuario = user_id
 
     db.session.add(mensagem)
     db.session.commit()
@@ -53,6 +59,12 @@ def update_mensagens(id):
 @jwt_required()
 def delete_mensagens(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
+
+    user_id = get_jwt_identity()
+
+     if mensagem.usuario_id != usuario.id and not usuario.admin:
+        return jsonify({'erro': 'Você não tem permissão para deletar esta mensagem.'}), 403
+
     db.session.delete(mensagem)
     db.session.commit()
     return jsonify({'mensagem':'Sua mensagem foi deletada com sucesso!'})
@@ -65,7 +77,10 @@ def create_comentario(id):
     if not request.json.get("conteudo"):
         return jsonify({'mensagem': 'Campo conteúdo não preenchido'}), 400
     
+    user_id = get_jwt_identity()
+    
     comentario.id_mensagem = id
+    comentario.id_usuario = user_id
 
     db.session.add(comentario)
     db.session.commit()
@@ -108,8 +123,13 @@ def update_comentario(id, id_comt):
 def delete_comentario(id, id_comt):
     comentario = Comentario.query.filter_by(id=id_comt, id_mensagem=id).first()
 
+    user_id = get_jwt_identity()
+
     if not comentario:
         return jsonify({"erro":"Algum ID inexistente recebido"})
+
+     if comentario.usuario_id != user_id and not usuario.admin:
+        return jsonify({'erro': 'Você não tem permissão para deletar esta mensagem.'}), 403
 
     db.session.delete(comentario)
     db.session.commit()

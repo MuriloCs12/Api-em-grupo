@@ -7,8 +7,8 @@ class Comentario(db.Model):
     conteudo = db.Column(db.String(500), nullable = False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id'), default=1) 
-    id_mensagem = db.Column(db.Integer, db.ForeignKey('mensagem.id'), default=1)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id')) 
+    id_mensagem = db.Column(db.Integer, db.ForeignKey('mensagem.id'))
 
     def to_dict(self):
         return {
