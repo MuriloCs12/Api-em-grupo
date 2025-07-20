@@ -15,6 +15,15 @@ bp_usuarios = Blueprint("usuarios", __name__, template_folder='templates')
 usuario_schema = UsuarioSchema()
 usuarios_schema = UsuarioSchema(many=True)
 
+def admin_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        claims = get_jwt()
+        if not claims.get("admin", False):
+            return jsonify({"msg": "Acesso negado: administrador apenas."}), 403
+        return func(*args, **kwargs)
+    return wrapper
 
 @bp_usuarios.route('/', methods=['GET'])
 @jwt_required()
@@ -38,17 +47,6 @@ def create_usuario():
     return jsonify({"mensagem": "Usuário criado com sucesso."}), 201
 
 
-def admin_required(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        verify_jwt_in_request()
-        claims = get_jwt()
-        if not claims.get("admin", False):
-            return jsonify({"msg": "Acesso negado: administrador apenas."}), 403
-        return func(*args, **kwargs)
-    return wrapper
-
-
 @bp_usuarios.route("/<int:id>", methods=["DELETE"])
 @jwt_required()
 @admin_required
@@ -63,7 +61,13 @@ def excluir_usuario(id):
 @bp_usuarios.route('/<int:id>', methods=['PATCH'])
 @jwt_required()
 def atualizar_dados(id):
+    username = get_jwt_identity()
+    user = Usuario.query.filter_by(nome = username).first()
+    if user.id != id:
+        return jsonify({"erro": "Você não tem permissão para atualizar esses dados."}), 403
+
     usuario = Usuario.query.get_or_404(id, description="Nenhum usuário com esse ID foi encontrado.")
+
     dados = request.get_json()
     
     schema = UsuarioSchema()

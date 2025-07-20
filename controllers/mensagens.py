@@ -1,22 +1,23 @@
 from flask import Blueprint, jsonify, request
 from models.mensagens import Mensagem
+from models.usuario import Usuario
 from models.comentario import Comentario
 from controllers.usuario import admin_required
 from utils import db
 from flask_login import current_user, login_required
 from schemas.mensagem_schema import MensagemSchema
 from schemas.comentario_schema import ComentarioSchema
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 bp_mensagens = Blueprint('mensagem', __name__)
 mensagem_schema = MensagemSchema()
 mensagens_schema = MensagemSchema(many=True)
 comentario_schema = ComentarioSchema()
-
+comentarios_schema = ComentarioSchema(many=True)
 @bp_mensagens.route('/', methods=['GET'])
 def read_all_mensagens():
     messages = Mensagem.query.all()
-    return jsonify([msg.to_dict() for msg in messages]), 200
+    return mensagens_schema.jsonify([msg.to_dict() for msg in messages]), 200
     
 @bp_mensagens.route('/<int:id>', methods=['GET'])
 @jwt_required()
@@ -32,9 +33,10 @@ def criar_mensagem():
     if not request.json.get("conteudo"):
         return jsonify({'mensagem': 'Campo conteúdo não preenchido'}), 400
 
-    user_id = get_jwt_identity
+    username = get_jwt_identity()
+    usuario = Usuario.query.filter_by(nome = username).first()
 
-    mensagem.id_usuario = user_id
+    mensagem.id_usuario = usuario.id
 
     db.session.add(mensagem)
     db.session.commit()
@@ -60,9 +62,9 @@ def update_mensagens(id):
 def delete_mensagens(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
 
-    user_id = get_jwt_identity()
+    usuario = Usuario.query.filter_by(nome=get_jwt_identity()).first()
 
-     if mensagem.usuario_id != usuario.id and not usuario.admin:
+    if mensagem.id_usuario != usuario.id and not usuario.admin:
         return jsonify({'erro': 'Você não tem permissão para deletar esta mensagem.'}), 403
 
     db.session.delete(mensagem)
@@ -90,7 +92,7 @@ def create_comentario(id):
 @jwt_required()
 def listar_comentarios(id):
     comentarios = Comentario.query.filter_by(id_mensagem=id)
-    return jsonify([cmt.to_dict() for cmt in comentarios]), 200
+    return comentarios_schema.jsonify([cmt.to_dict() for cmt in comentarios]), 200
 
 @bp_mensagens.route('/<int:id>/comentarios/<int:id_comt>', methods=['GET'])
 @jwt_required()
@@ -123,13 +125,13 @@ def update_comentario(id, id_comt):
 def delete_comentario(id, id_comt):
     comentario = Comentario.query.filter_by(id=id_comt, id_mensagem=id).first()
 
-    user_id = get_jwt_identity()
+    usuario = Usuario.query.filter_by(nome=get_jwt_identity()).first()
 
     if not comentario:
         return jsonify({"erro":"Algum ID inexistente recebido"})
 
-     if comentario.usuario_id != user_id and not usuario.admin:
-        return jsonify({'erro': 'Você não tem permissão para deletar esta mensagem.'}), 403
+    if comentario.id_usuario != usuario.id and not usuario.admin:
+        return jsonify({'erro': 'Você não tem permissão para deletar este comentário.'}), 403
 
     db.session.delete(comentario)
     db.session.commit()
