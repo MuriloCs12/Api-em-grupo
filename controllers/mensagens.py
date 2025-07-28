@@ -14,6 +14,7 @@ mensagem_schema = MensagemSchema()
 mensagens_schema = MensagemSchema(many=True)
 comentario_schema = ComentarioSchema()
 comentarios_schema = ComentarioSchema(many=True)
+
 @bp_mensagens.route('/', methods=['GET'])
 def read_all_mensagens():
     messages = Mensagem.query.all()
