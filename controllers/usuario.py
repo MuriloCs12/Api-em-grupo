@@ -27,12 +27,16 @@ def admin_required(func):
 
 @bp_usuarios.route('/', methods=['GET'])
 @jwt_required()
-@admin_required
 def get_usuarios():
-    usuarios = Usuario.query.all()
-    return usuarios_schema.jsonify([user.to_dict() for user in usuarios]), 200
+    usuario = Usuario.query.filter_by(nome=get_jwt_identity()).first()
 
+    if usuario.admin:
+        usuarios = Usuario.query.all()
+        return usuarios_schema.jsonify([user.to_dict() for user in usuarios]), 200
 
+    return usuario_schema.jsonify(usuario.to_dict())
+    
+    
 @bp_usuarios.route('/', methods=['POST'])
 def create_usuario():
     schema = UsuarioSchema()
@@ -63,7 +67,7 @@ def excluir_usuario(id):
 def atualizar_dados(id):
     username = get_jwt_identity()
     user = Usuario.query.filter_by(nome = username).first()
-    if user.id != id:
+    if user.id != id and not user.admin:
         return jsonify({"erro": "Você não tem permissão para atualizar esses dados."}), 403
 
     usuario = Usuario.query.get_or_404(id, description="Nenhum usuário com esse ID foi encontrado.")
