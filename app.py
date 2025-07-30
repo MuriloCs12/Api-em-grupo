@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, make_response, render_template
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models.mensagens import Mensagem
+from models.usuario import Usuario
 from utils import db, ma, lm
 from flask_migrate import Migrate
 from controllers.mensagens import bp_mensagens
@@ -8,8 +9,9 @@ from controllers.usuario import bp_usuarios
 from marshmallow import ValidationError
 from werkzeug.exceptions import HTTPException
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt_identity, jwt_required, set_access_cookies, get_jwt
+from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, get_jwt_identity, jwt_required, set_access_cookies, get_jwt
 from datetime import datetime, timezone, timedelta
+from werkzeug.security import check_password_hash
 
 
 app = Flask(__name__)
@@ -55,6 +57,30 @@ def register_error_handlers(app):
 
 register_error_handlers(app)
 
+@app.route("/auth/login", methods=["POST"])
+def login():
+    nome = request.json.get("nome", None)
+    senha = request.json.get("senha", None)
+    user = Usuario.query.filter_by(nome = nome).first()
+
+    if not nome or not senha:
+        return jsonify({"erro": "Nome e senha são obrigatórios"}), 400
+    if not user or not check_password_hash(user.senha, senha):
+        return jsonify({"erro": "Nome ou senha incorretos"}), 401
+
+    access_token = create_access_token(identity=user.nome, fresh=True, additional_claims={"admin": user.admin})
+    refresh_token = create_refresh_token(identity=user.nome)
+    return jsonify(access_token=access_token, refresh_token=refresh_token)
+
+
+@app.route("/auth/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    identity = get_jwt_identity()
+    access_token = create_access_token(identity=identity, fresh=False)
+    return jsonify(access_token=access_token)
+
+    
 
 
 if __name__ == '__main__':

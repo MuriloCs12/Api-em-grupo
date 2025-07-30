@@ -8,7 +8,6 @@ from werkzeug.security import generate_password_hash
 from datetime import datetime, timezone, timedelta
 from functools import wraps
 import hashlib
-from werkzeug.security import check_password_hash
 
 bp_usuarios = Blueprint("usuarios", __name__, template_folder='templates')
 
@@ -72,11 +71,7 @@ def atualizar_dados(id):
 
     usuario = Usuario.query.get_or_404(id, description="Nenhum usuário com esse ID foi encontrado.")
 
-    dados = request.get_json()
     
-    schema = UsuarioSchema()
-    schema.context = {"id": id}
-    dados_alterados = schema.load(dados, partial=True)
 
     if request.json.get("nome"):
         usuario.nome = dados_alterados.nome
@@ -98,29 +93,3 @@ def promover_usuario(id):
     usuario.admin = True
     db.session.commit()
     return jsonify({"msg": f"Usuário {usuario.nome} promovido a admin."})
-
-
-@bp_usuarios.route("/login", methods=["POST"])
-def login():
-    nome = request.json.get("nome", None)
-    senha = request.json.get("senha", None)
-    user = Usuario.query.filter_by(nome = nome).first()
-
-    if not nome or not senha:
-        return jsonify({"erro": "Nome e senha são obrigatórios"}), 400
-    if not user or not check_password_hash(user.senha, senha):
-        return jsonify({"erro": "Nome ou senha incorretos"}), 401
-
-    access_token = create_access_token(identity=user.nome, fresh=True, additional_claims={"admin": user.admin})
-    refresh_token = create_refresh_token(identity=user.nome)
-    return jsonify(access_token=access_token, refresh_token=refresh_token)
-
-
-@bp_usuarios.route("/refresh", methods=["POST"])
-@jwt_required(refresh=True)
-def refresh():
-    identity = get_jwt_identity()
-    access_token = create_access_token(identity=identity, fresh=False)
-    return jsonify(access_token=access_token)
-
-    
