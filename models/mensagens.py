@@ -1,5 +1,6 @@
 from utils import db
 from datetime import datetime
+from models.comentario import Comentario
 
 class Mensagem(db.Model):
     __tablename__ = "mensagem"
@@ -18,4 +19,21 @@ class Mensagem(db.Model):
             "conteudo": self.conteudo,
             "created_at": self.created_at,
             "id_usuario": self.id_usuario
+        }
+
+    def to_dict_com_comentarios(self):
+        return {
+            "id": self.id,
+            "titulo": self.titulo,
+            "conteudo": self.conteudo,
+            "created_at": self.created_at,
+            "id_usuario": self.id_usuario,
+            "comentarios": [
+                {
+                    "id": comentario.id,
+                    "conteudo": comentario.conteudo,
+                    "created_at": comentario.created_at,
+                    "id_usuario": comentario.id_usuario
+                } for comentario in self.comentarios
+            ]
         }

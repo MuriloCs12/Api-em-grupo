@@ -26,14 +26,21 @@ def admin_required(func):
 
 @bp_usuarios.route('/', methods=['GET'])
 @jwt_required()
+@admin_required
 def get_usuarios():
-    usuario = Usuario.query.filter_by(nome=get_jwt_identity()).first()
+    usuarios = Usuario.query.all()
+    return usuarios_schema.jsonify([user.to_dict() for user in usuarios]), 200
 
-    if usuario.admin:
-        usuarios = Usuario.query.all()
-        return usuarios_schema.jsonify([user.to_dict() for user in usuarios]), 200
+@bp_usuarios.route('/<int:id>', methods=['GET'])
+@jwt_required()
+def get_usuario(id):
+    usuario_observado = Usuario.query.get_or_404(id, description="Usuário não encontrado.")
+    usuario_atual = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
-    return usuario_schema.jsonify(usuario.to_dict())
+    if id != usuario_atual.id and not usuario_atual.admin:
+        return jsonify({'erro': 'Você não tem permissão para ler este usuário.'}), 403
+
+    return jsonify(usuario_observado.to_dict())
     
     
 @bp_usuarios.route('/', methods=['POST'])
@@ -64,14 +71,19 @@ def excluir_usuario(id):
 @bp_usuarios.route('/<int:id>', methods=['PATCH'])
 @jwt_required()
 def atualizar_dados(id):
-    username = get_jwt_identity()
-    user = Usuario.query.filter_by(nome = username).first()
+    usuario = Usuario.query.get_or_404(id, description="Usuário não encontrado.")
+
+    user = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
     if user.id != id and not user.admin:
         return jsonify({"erro": "Você não tem permissão para atualizar esses dados."}), 403
 
     usuario = Usuario.query.get_or_404(id, description="Nenhum usuário com esse ID foi encontrado.")
 
+    dados = request.get_json()
     
+    schema = UsuarioSchema()
+    schema.context = {"id": id}
+    dados_alterados = schema.load(dados, partial=True)
 
     if request.json.get("nome"):
         usuario.nome = dados_alterados.nome

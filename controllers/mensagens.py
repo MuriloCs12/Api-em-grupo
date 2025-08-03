@@ -24,18 +24,16 @@ def read_all_mensagens():
 @jwt_required()
 def read_one_mensagem(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
-    return jsonify(mensagem.to_dict())
+    return jsonify(mensagem.to_dict_com_comentarios())
 
 @bp_mensagens.route('/', methods=['POST'])
 @jwt_required()
 def criar_mensagem():
     mensagem = mensagem_schema.load(request.get_json())
+    usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
-    if not request.json.get("conteudo") and not request.json.get("titulo"):
-        return jsonify({'mensagem': 'Erro. Algum campo não preenchido'}), 400
-
-    username = get_jwt_identity()
-    usuario = Usuario.query.filter_by(nome = username).first()
+    if not request.json.get("conteudo") or not request.json.get("titulo"):
+        return jsonify({'erro': 'Algum campo não preenchido'}), 400 
 
     mensagem.id_usuario = usuario.id
 
@@ -46,13 +44,19 @@ def criar_mensagem():
 @bp_mensagens.route('/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_mensagens(id):
+    usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
+    if mensagem.id_usuario != usuario.id and not usuario.admin:
+        return jsonify({"erro":"Você não tem permissão para atualizar esta mensagem."}), 403
+    
     dados_mensagem = mensagem_schema.load(request.get_json())
+    novo_titulo = request.json.get("titulo")
     novo_conteudo = request.json.get("conteudo")
 
-    if not novo_conteudo:
-        return jsonify({'mensagem': 'Campo conteúdo precisa ser preenchido.'}), 400
+    if not novo_titulo or not novo_conteudo:
+        return jsonify({'mensagem': 'Título e conteúdo são obrigatórios.'}), 400
     
+    mensagem.titulo = novo_titulo
     mensagem.conteudo = novo_conteudo
    
     db.session.commit()
@@ -61,8 +65,7 @@ def update_mensagens(id):
 @bp_mensagens.route('/<int:id>', methods=['PATCH'])
 @jwt_required()
 def update_parcial(id):
-    username = get_jwt_identity()
-    usuario = Usuario.query.filter_by(nome=username).first()
+    usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
     if mensagem.id_usuario != usuario.id and not usuario.admin:
         return jsonify({"mensagem":"Erro. Você não tem permissão para atualizar esta mensagem."}), 403
@@ -86,7 +89,7 @@ def update_parcial(id):
 def delete_mensagens(id):
     mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
 
-    usuario = Usuario.query.filter_by(nome=get_jwt_identity()).first()
+    usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
     if mensagem.id_usuario != usuario.id and not usuario.admin:
         return jsonify({'erro': 'Você não tem permissão para deletar esta mensagem.'}), 403
@@ -103,10 +106,8 @@ def create_comentario(id):
     if not request.json.get("conteudo"):
         return jsonify({'mensagem': 'Campo conteúdo não preenchido'}), 400
     
-    user_id = get_jwt_identity()
-    
     comentario.id_mensagem = id
-    comentario.id_usuario = user_id
+    comentario.id_usuario = int(get_jwt_identity())
 
     db.session.add(comentario)
     db.session.commit()
@@ -116,28 +117,28 @@ def create_comentario(id):
 @jwt_required()
 def listar_comentarios(id):
     comentarios = Comentario.query.filter_by(id_mensagem=id)
-    return comentarios_schema.jsonify([cmt.to_dict() for cmt in comentarios]), 200
+    return jsonify([cmt.to_dict() for cmt in comentarios]), 200
 
-@bp_mensagens.route('/<int:id>/comentarios/<int:id_comt>', methods=['GET'])
-@jwt_required()
-def read_one_comentario(id, id_comt):
-    comentario = Comentario.query.filter_by(id=id_comt, id_mensagem=id).first()
-
-    if not comentario:
-        return jsonify({"erro":"Algum ID inexistente recebido"})
-    
-    return comentario_schema.jsonify(comentario)
 
 @bp_mensagens.route('/<int:id>/comentarios/<int:id_comt>', methods=['PUT'])
 @jwt_required()
 def update_comentario(id, id_comt):
     comentario = Comentario.query.filter_by(id=id_comt, id_mensagem=id).first()
+    usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
+
+    if not comentario:
+        return jsonify({"erro":"Algum ID inexistente recebido"})
+
     
+    if comentario.id_usuario != usuario.id and not usuario.admin:
+        return jsonify({'erro': 'Você não tem permissão para atualizar este comentário.'}), 403
+
     dados_comentario = comentario_schema.load(request.get_json())
     novo_conteudo = request.json.get("conteudo")
 
     if not novo_conteudo:
         return jsonify({'mensagem': 'Campo conteúdo precisa ser preenchido.'}), 400
+
     
     comentario.conteudo = novo_conteudo
    
@@ -149,7 +150,7 @@ def update_comentario(id, id_comt):
 def delete_comentario(id, id_comt):
     comentario = Comentario.query.filter_by(id=id_comt, id_mensagem=id).first()
 
-    usuario = Usuario.query.filter_by(nome=get_jwt_identity()).first()
+    usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
     if not comentario:
         return jsonify({"erro":"Algum ID inexistente recebido"})
