@@ -31,8 +31,8 @@ def read_one_mensagem(id):
 def criar_mensagem():
     mensagem = mensagem_schema.load(request.get_json())
 
-    if not request.json.get("conteudo"):
-        return jsonify({'mensagem': 'Campo conteúdo não preenchido'}), 400
+    if not request.json.get("conteudo") and not request.json.get("titulo"):
+        return jsonify({'mensagem': 'Erro. Algum campo não preenchido'}), 400
 
     username = get_jwt_identity()
     usuario = Usuario.query.filter_by(nome = username).first()
@@ -57,6 +57,29 @@ def update_mensagens(id):
    
     db.session.commit()
     return jsonify(mensagem.to_dict()), 200
+
+@bp_mensagens.route('/mensagens/<int:id>', methods=['PATCH'])
+@jwt_required()
+def update_parcial(id):
+    username = get_jwt_identity()
+    usuario = Usuario.query.filter_by(nome=username).first()
+    mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
+    if mensagem.id_usuario != usuario.id and not usuario.admin:
+        return jsonify({"mensagem":"Erro. Você não tem permissão para atualizar esta mensagem."}), 403
+    
+    dados = request.get_json()
+    
+    schema = MensagemSchema()
+    schema.context = {"id": id}
+    dados_alterados = schema.load(dados, partial=True)
+
+    if request.json.get("titulo"):
+        mensagem.titulo = dados_alterados.titulo
+    if request.json.get("conteudo"):
+        mensagem.conteudo = dados_alterados.conteudo
+
+    db.session.commit()
+    return jsonify({"mensagem": "Dados atualizados com sucesso."}), 200
 
 @bp_mensagens.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
