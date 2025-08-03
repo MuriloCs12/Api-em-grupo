@@ -58,7 +58,7 @@ def update_mensagens(id):
     db.session.commit()
     return jsonify(mensagem.to_dict()), 200
 
-@bp_mensagens.route('/mensagens/<int:id>', methods=['PATCH'])
+@bp_mensagens.route('/<int:id>', methods=['PATCH'])
 @jwt_required()
 def update_parcial(id):
     username = get_jwt_identity()
