@@ -14,6 +14,6 @@ class Mensagem(db.Model):
         return {
             "id": self.id,
             "conteudo": self.conteudo,
-            "created_at": self.created_at.isoformat(),
+            "created_at": self.created_at,
             "id_usuario": self.id_usuario
         }
