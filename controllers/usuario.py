@@ -38,15 +38,18 @@ def get_usuario(id):
     usuario_atual = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
     if id != usuario_atual.id and not usuario_atual.admin:
-        return jsonify({'erro': 'Você não tem permissão para ler este usuário.'}), 403
+        return jsonify({"error": "Você não tem permissão para acessar este usuário"}), 403
 
     return jsonify(usuario_observado.to_dict())
     
     
 @bp_usuarios.route('/', methods=['POST'])
 def create_usuario():
+    data = request.get_json()
+    if not data.get('nome') or not data.get('email') or not data.get('senha'):
+        return jsonify({"errors": {"nome":["Campo obrigatório."], "email": ["Campo obrigatório."], "senha": ["Campo obrigatório."]}}), 422
+
     schema = UsuarioSchema()
-    schema.context = {}
     usuario = schema.load(request.get_json())
 
     usuario.senha = generate_password_hash(usuario.senha)
@@ -75,9 +78,7 @@ def atualizar_dados(id):
 
     user = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
     if user.id != id and not user.admin:
-        return jsonify({"erro": "Você não tem permissão para atualizar esses dados."}), 403
-
-    usuario = Usuario.query.get_or_404(id, description="Nenhum usuário com esse ID foi encontrado.")
+        return jsonify({"error": "Você não tem permissão para alterar este usuário"}), 403
 
     dados = request.get_json()
     

@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, make_response, render_template
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models.mensagens import Mensagem
 from models.usuario import Usuario
 from utils import db, ma, lm
@@ -7,7 +6,7 @@ from flask_migrate import Migrate
 from controllers.mensagens import bp_mensagens
 from controllers.usuario import bp_usuarios
 from marshmallow import ValidationError
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, NotFound
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, get_jwt_identity, jwt_required, set_access_cookies, get_jwt
 from datetime import datetime, timezone, timedelta
@@ -24,7 +23,6 @@ app.json.sort_keys = False
 db.init_app(app)
 migrate = Migrate(app, db)
 ma.init_app(app)
-lm.init_app(app)
 CORS(app)
 jwt = JWTManager(app)
 
@@ -55,7 +53,21 @@ def register_error_handlers(app):
             "mensagem": str(error)
         }), 500
 
+    @app.errorhandler(NotFound)
+    def handle_not_found_error(e):
+        description = getattr(e, 'description', 'Recurso não encontrado')
+
+        if isinstance(description, dict):
+            return jsonify(description), 404
+        
+        return jsonify({"error": description}), 404
+
 register_error_handlers(app)
+
+@jwt.expired_token_loader
+def token_expirado_callback(jwt_header, jwt_payload):
+    tipo = jwt_payload.get("type", "access")
+    return jsonify({"error": f"{tipo} token inválido ou expirado"}), 401
 
 @app.route("/auth/login", methods=["POST"])
 def login():
@@ -64,9 +76,9 @@ def login():
     user = Usuario.query.filter_by(nome = nome).first()
 
     if not nome or not senha:
-        return jsonify({"erro": "Nome e senha são obrigatórios"}), 400
+        return jsonify({"errors": {"nome": ["Campo obrigatório."], "senha": ["Campo obrigatório."]}}), 422
     if not user or not check_password_hash(user.senha, senha):
-        return jsonify({"erro": "Nome ou senha incorretos"}), 401
+        return jsonify({"error": "Credenciais inválidas"}), 401
 
     access_token = create_access_token(identity=str(user.id), fresh=True, additional_claims={"admin": user.admin})
     refresh_token = create_refresh_token(identity=str(user.id))

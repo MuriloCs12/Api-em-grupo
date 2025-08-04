@@ -23,18 +23,19 @@ def read_all_mensagens():
 @bp_mensagens.route('/<int:id>', methods=['GET'])
 @jwt_required()
 def read_one_mensagem(id):
-    mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
+    mensagem = Mensagem.query.get_or_404(id, description={"error": "Mensagem não encontrada"})
     return jsonify(mensagem.to_dict_com_comentarios())
 
 @bp_mensagens.route('/', methods=['POST'])
 @jwt_required()
 def criar_mensagem():
-    mensagem = mensagem_schema.load(request.get_json())
+    dados = request.get_json()
     usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
-    if not request.json.get("conteudo") or not request.json.get("titulo"):
-        return jsonify({'erro': 'Algum campo não preenchido'}), 400 
+    if not dados.get("conteudo") or not dados.get("titulo"):
+        return jsonify({"errors": {"titulo": ["Campo obrigatório."], "conteudo":["Campo obrigatório"]}}), 422 
 
+    mensagem = mensagem_schema.load(dados)
     mensagem.id_usuario = usuario.id
 
     db.session.add(mensagem)
@@ -44,17 +45,17 @@ def criar_mensagem():
 @bp_mensagens.route('/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_mensagens(id):
-    usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
-    mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
+    usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description={"error": "Usuário não encontrado"})
+    mensagem = Mensagem.query.get_or_404(id, description="Mensagem não encontrada.")
     if mensagem.id_usuario != usuario.id and not usuario.admin:
-        return jsonify({"erro":"Você não tem permissão para atualizar esta mensagem."}), 403
+        return jsonify({"error": "Você não tem permissão para alterar esta mensagem"}), 403
     
     dados_mensagem = mensagem_schema.load(request.get_json())
     novo_titulo = request.json.get("titulo")
     novo_conteudo = request.json.get("conteudo")
 
     if not novo_titulo or not novo_conteudo:
-        return jsonify({'mensagem': 'Título e conteúdo são obrigatórios.'}), 400
+        return jsonify({"errors": {"titulo": ["Campo obrigatório."], "conteudo": ["Campo obrigatório."]}}), 422
     
     mensagem.titulo = novo_titulo
     mensagem.conteudo = novo_conteudo
@@ -66,9 +67,9 @@ def update_mensagens(id):
 @jwt_required()
 def update_parcial(id):
     usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
-    mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
+    mensagem = Mensagem.query.get_or_404(id, description="Mensagem não encontrada.")
     if mensagem.id_usuario != usuario.id and not usuario.admin:
-        return jsonify({"mensagem":"Erro. Você não tem permissão para atualizar esta mensagem."}), 403
+        return jsonify({"error": "Você não tem permissão para alterar esta mensagem"}), 403
     
     dados = request.get_json()
     
