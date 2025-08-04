@@ -88,12 +88,12 @@ def update_parcial(id):
 @bp_mensagens.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_mensagens(id):
-    mensagem = Mensagem.query.get_or_404(id, description="Nenhuma mensagem com esse ID foi encontrada.")
+    mensagem = Mensagem.query.get_or_404(id, description="Mensagem não encontrada.")
 
     usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
     if mensagem.id_usuario != usuario.id and not usuario.admin:
-        return jsonify({'erro': 'Você não tem permissão para deletar esta mensagem.'}), 403
+        return jsonify({"error": "Você não tem permissão para excluir esta mensagem"}), 403
 
     db.session.delete(mensagem)
     db.session.commit()
@@ -103,11 +103,15 @@ def delete_mensagens(id):
 @bp_mensagens.route('/<int:id>/comentarios', methods=['POST'])
 @jwt_required()
 def create_comentario(id):
-    comentario = comentario_schema.load(request.get_json())
-    if not request.json.get("conteudo"):
-        return jsonify({'mensagem': 'Campo conteúdo não preenchido'}), 400
-    
-    comentario.id_mensagem = id
+    dados = request.get_json()
+
+    if not dados.get("conteudo"):
+        return jsonify({"errors": {"conteudo": ["Campo obrigatório."]}}), 422
+
+    comentario = comentario_schema.load(dados)
+    mensagem = Mensagem.query.get_or_404(id, description="Mensagem não encontrada.")
+
+    comentario.id_mensagem = mensagem.id
     comentario.id_usuario = int(get_jwt_identity())
 
     db.session.add(comentario)
@@ -117,6 +121,7 @@ def create_comentario(id):
 @bp_mensagens.route('/<int:id>/comentarios', methods=['GET'])
 @jwt_required()
 def listar_comentarios(id):
+    mensagem = Mensagem.query.get_or_404(id, description="Mensagem não encontrada.")
     comentarios = Comentario.query.filter_by(id_mensagem=id)
     return jsonify([cmt.to_dict() for cmt in comentarios]), 200
 
@@ -128,17 +133,16 @@ def update_comentario(id, id_comt):
     usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
     if not comentario:
-        return jsonify({"erro":"Algum ID inexistente recebido"})
+        return jsonify({"error": "Comentário não encontrado"})
 
-    
     if comentario.id_usuario != usuario.id and not usuario.admin:
-        return jsonify({'erro': 'Você não tem permissão para atualizar este comentário.'}), 403
+        return jsonify({"error": "Você não tem permissão para alterar este comentário"}), 403
 
     dados_comentario = comentario_schema.load(request.get_json())
     novo_conteudo = request.json.get("conteudo")
 
     if not novo_conteudo:
-        return jsonify({'mensagem': 'Campo conteúdo precisa ser preenchido.'}), 400
+        return jsonify({"error": {"conteudo": ["Campo obrigatório."]}}), 422
 
     
     comentario.conteudo = novo_conteudo
@@ -154,10 +158,10 @@ def delete_comentario(id, id_comt):
     usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
     if not comentario:
-        return jsonify({"erro":"Algum ID inexistente recebido"})
+        return jsonify({"error": "Comentário não encontrado"})
 
     if comentario.id_usuario != usuario.id and not usuario.admin:
-        return jsonify({'erro': 'Você não tem permissão para deletar este comentário.'}), 403
+        return jsonify({"error": "Você não tem permissão para excluir este comentário"}), 403
 
     db.session.delete(comentario)
     db.session.commit()
