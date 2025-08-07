@@ -15,7 +15,7 @@ with app.app_context():
             nome="Admin1",
             email=email_admin,
             senha=generate_password_hash("senha123"),
-            admin=True
+            perfil = "ADMIN"
         )
         db.session.add(admin)
         db.session.commit()

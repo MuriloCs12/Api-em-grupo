@@ -47,7 +47,7 @@ def criar_mensagem():
 def update_mensagens(id):
     usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description={"error": "Usuário não encontrado"})
     mensagem = Mensagem.query.get_or_404(id, description="Mensagem não encontrada.")
-    if mensagem.id_usuario != usuario.id and not usuario.admin:
+    if mensagem.id_usuario != usuario.id and usuario.perfil != "ADMIN":
         return jsonify({"error": "Você não tem permissão para alterar esta mensagem"}), 403
     
     dados_mensagem = mensagem_schema.load(request.get_json())
@@ -68,7 +68,7 @@ def update_mensagens(id):
 def update_parcial(id):
     usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
     mensagem = Mensagem.query.get_or_404(id, description="Mensagem não encontrada.")
-    if mensagem.id_usuario != usuario.id and not usuario.admin:
+    if mensagem.id_usuario != usuario.id and usuario.perfil != "ADMIN":
         return jsonify({"error": "Você não tem permissão para alterar esta mensagem"}), 403
     
     dados = request.get_json()
@@ -92,7 +92,7 @@ def delete_mensagens(id):
 
     usuario = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
 
-    if mensagem.id_usuario != usuario.id and not usuario.admin:
+    if mensagem.id_usuario != usuario.id and usuario.perfil != "ADMIN":
         return jsonify({"error": "Você não tem permissão para excluir esta mensagem"}), 403
 
     db.session.delete(mensagem)
@@ -135,7 +135,7 @@ def update_comentario(id, id_comt):
     if not comentario:
         return jsonify({"error": "Comentário não encontrado"})
 
-    if comentario.id_usuario != usuario.id and not usuario.admin:
+    if comentario.id_usuario != usuario.id and usuario.perfil != "ADMIN":
         return jsonify({"error": "Você não tem permissão para alterar este comentário"}), 403
 
     dados_comentario = comentario_schema.load(request.get_json())
@@ -160,7 +160,7 @@ def delete_comentario(id, id_comt):
     if not comentario:
         return jsonify({"error": "Comentário não encontrado"})
 
-    if comentario.id_usuario != usuario.id and not usuario.admin:
+    if comentario.id_usuario != usuario.id and usuario.perfil != "ADMIN":
         return jsonify({"error": "Você não tem permissão para excluir este comentário"}), 403
 
     db.session.delete(comentario)

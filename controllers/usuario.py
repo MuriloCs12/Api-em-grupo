@@ -19,8 +19,8 @@ def admin_required(func):
     def wrapper(*args, **kwargs):
         verify_jwt_in_request()
         claims = get_jwt()
-        if not claims.get("admin", False):
-            return jsonify({"msg": "Acesso negado: administrador apenas."}), 403
+        if claims.get("perfil") != "ADMIN":
+            return jsonify({"error": "Você não tem permissão para acessar essa rota"}), 403
         return func(*args, **kwargs)
     return wrapper
 
@@ -49,8 +49,7 @@ def create_usuario():
     if not data.get('nome') or not data.get('email') or not data.get('senha'):
         return jsonify({"errors": {"nome":["Campo obrigatório."], "email": ["Campo obrigatório."], "senha": ["Campo obrigatório."]}}), 422
 
-    schema = UsuarioSchema()
-    usuario = schema.load(request.get_json())
+    usuario = usuario_schema.load(request.get_json())
 
     usuario.senha = generate_password_hash(usuario.senha)
 
@@ -77,7 +76,7 @@ def atualizar_dados(id):
     usuario = Usuario.query.get_or_404(id, description="Usuário não encontrado.")
 
     user = Usuario.query.get_or_404(int(get_jwt_identity()), description="Usuário não encontrado.")
-    if user.id != id and not user.admin:
+    if user.id != id and usuario.perfil != "ADMIN":
         return jsonify({"error": "Você não tem permissão para alterar este usuário"}), 403
 
     dados = request.get_json()
@@ -103,6 +102,6 @@ def atualizar_dados(id):
 @admin_required
 def promover_usuario(id):
     usuario = Usuario.query.get_or_404(id)
-    usuario.admin = True
+    usuario.perfil = "ADMIN"
     db.session.commit()
     return jsonify({"msg": f"Usuário {usuario.nome} promovido a admin."})

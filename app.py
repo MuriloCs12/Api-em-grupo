@@ -71,16 +71,16 @@ def token_expirado_callback(jwt_header, jwt_payload):
 
 @app.route("/auth/login", methods=["POST"])
 def login():
-    nome = request.json.get("nome", None)
+    email = request.json.get("email", None)
     senha = request.json.get("senha", None)
-    user = Usuario.query.filter_by(nome = nome).first()
+    user = Usuario.query.filter_by(email=email).first()
 
-    if not nome or not senha:
-        return jsonify({"errors": {"nome": ["Campo obrigatório."], "senha": ["Campo obrigatório."]}}), 422
+    if not email or not senha:
+        return jsonify({"errors": {"email": ["Campo obrigatório."], "senha": ["Campo obrigatório."]}}), 422
     if not user or not check_password_hash(user.senha, senha):
         return jsonify({"error": "Credenciais inválidas"}), 401
 
-    access_token = create_access_token(identity=str(user.id), fresh=True, additional_claims={"admin": user.admin})
+    access_token = create_access_token(identity=str(user.id), fresh=True, additional_claims={"perfil":user.perfil})
     refresh_token = create_refresh_token(identity=str(user.id))
     return jsonify(access_token=access_token, refresh_token=refresh_token)
 
@@ -93,7 +93,6 @@ def refresh():
     return jsonify(access_token=access_token)
 
     
-
 
 if __name__ == '__main__':
     with app.app_context():  

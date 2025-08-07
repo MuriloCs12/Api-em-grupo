@@ -4,6 +4,10 @@ from models.usuario import Usuario
 import re
 
 class UsuarioSchema(ma.SQLAlchemyAutoSchema):
+    def __init__(self, *args, **kwargs):
+        self.context = kwargs.pop('context', {})  # Garante atribuição do contexto
+        super().__init__(*args, **kwargs)
+        
     class Meta:
         model = Usuario
         load_instance = True  
