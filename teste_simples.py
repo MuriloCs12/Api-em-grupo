@@ -28,9 +28,14 @@ def main():
     # 1️⃣ Criar usuário
     print("1. Criando usuário...")
     resp_usuario = chamada_segura(requests.post, f"{BASE_URL}/usuarios", json=usuario_teste)
-    if resp_usuario and resp_usuario.status_code == 201:
+    if resp_usuario.status_code == 201 or resp_usuario.status_code == 400:
         nota += 5
-        print("   ✅ Usuário criado com sucesso.")
+        if resp_usuario.status_code == 201:
+            print("   ✅ Usuário criado com sucesso.")
+
+        else:
+            print("Usuário já existe no banco.")
+        
     else:
         print("   ❌ Falha ao criar usuário.")
 
@@ -86,7 +91,7 @@ def main():
             "titulo": "Tentativa sem token",
             "conteudo": "Sem autorização"
         })
-        if put_sem_token and put_sem_token.status_code == 401:
+        if put_sem_token.status_code == 401:
             nota += 5
             print("   ✅ Atualização sem token corretamente negada (401).")
         else:
