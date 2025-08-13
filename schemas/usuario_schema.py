@@ -11,11 +11,12 @@ class UsuarioSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Usuario
         load_instance = True  
-        fields = ("id", "nome", "email", "senha")
+        fields = ("id", "nome", "email", "senha", "perfil")
     id = fields.Int(dump_only=True)
     nome = fields.Str(required=True, validate=validate.Length(min=1, max=200))
     email = fields.Email(required=True)
     senha = fields.Str(required=True)
+    perfil = fields.Str(validate=validate.Length(min=1, max=5))
 
     @validates('nome')
     def validar_nome_unico(self, value, **kwargs):
